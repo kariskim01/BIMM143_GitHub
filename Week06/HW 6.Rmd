@@ -1,0 +1,80 @@
+---
+title: "Class 06 R Functions"
+author: "Karis Kim (A16378938)"
+date: "2024-04-20"
+output:
+  pdf_document: default
+---
+
+For this assignment, we will introduce R functions and learn how to write our own R functions. 
+
+## Questions to Answer
+
+> Q1. Can you improve this analysis code?
+
+library(bio3d)
+s1 <- read.pdb("4AKE") # kinase with drug
+
+
+```{r}
+s2 <- read.pdb("1AKE") # kinase no drug
+```
+
+```{r}
+s3 <- read.pdb("1E4Y") # kinase with drug
+```
+
+```{r}
+s1 <- trim.pdb(s1, chain = "A", elety = "CA") :
+s2 <- trim.pdb(s2, chain = "A", elety = "CA") :
+s3 <- trim.pdb(s3, chain = "A", elety = "CA") :
+
+s1.b <- s1.chainA$atom$b
+s2.b <- s2.chainA$atom$b
+s3.b <- s3.chainA$atom$b
+
+plotb3(s3.b, sse = s3.chainA, typ = "l", ylab = "Bfactor")
+```
+
+```{r}
+prot_drug_plot <- function(file, chain, elmnt, fctr) {
+  
+  # allows our data to be different colors in the graph
+  plot_colors <- c("blue", "red", "purple")
+  
+  
+  # to iterate through every value of the file vector
+  for (i in 1:length(file)) {
+  s1 <- read.pdb(file[i])
+
+  s1.chain <- trim.pdb(s1, chain = chain, elety = elmnt)
+  
+  atom_df <- s1.chain$atom
+  
+  # the "$" syntax cannot take a variable, so s1.fctr takes in all the atom information and selects an entire column based on the factor input
+  s1.fctr <- atom_df[, fctr] 
+  
+  # creates the first plot
+  if (i == 1) {
+    plotb3(s1.fctr, sse = s1.chain, typ = "l", ylab = paste(toupper(fctr), "factor", sep = ""), col = plot_colors[i])
+    
+    # adds additional plots to first plot
+  } else {
+    lines(s1.fctr, col = plot_colors[i])
+  }
+  }
+  
+  # creates a legend for the graph
+  legend("topright", title = "PDB File Name", file, fill = plot_colors, horiz=TRUE, cex = 0.5, inset = c(0.03, 0.06))
+}
+```
+
+```{r}
+files <- c("4AKE", "1AKE", "1E4Y")
+chains <- "A"
+elements <- "CA"
+factors <- "b"
+
+prot_drug_plot(files, chains, elements, factors)
+```
+
