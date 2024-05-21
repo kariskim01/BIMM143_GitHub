@@ -1,0 +1,323 @@
+---
+title: "Class 09"
+author: "Karis Kim (A16378938)"
+date: "2024-04-30"
+output:
+  pdf_document: default
+---
+
+```{r}
+candy_url <- "https://raw.githubusercontent.com/fivethirtyeight/data/master/candy-power-ranking/candy-data.csv"
+candy <- read.csv(candy_url, row.names = 1)
+
+head(candy)
+```
+
+> Q1. How many different candy types are in this dataset?
+
+```{r}
+num_candy <- nrow(candy)
+sum(num_candy)
+```
+> Q2. How many fruity andy types are in the dataset?
+
+```{r}
+num_fruity_candy <- sum(candy$fruity)
+sum(candy$fruity)
+```
+
+> Q3. What is your favorite candy in the dataset and what is it's winpercent value?
+
+```{r}
+fav_candy <- "Twix"
+fav_winpercent <- candy[fav_candy, ]$winpercent
+sum(fav_winpercent)
+```
+
+> Q4. What is the winpercent value for **Kit Kat**?
+
+```{r}
+kit_kat <- "Kit Kat"
+kit_kat_winpercent <- candy[kit_kat, ]$winpercent
+sum(kit_kat_winpercent)
+```
+> Q5. What is the winpercent value for **Tootsie Roll Snack Bars**?
+
+```{r}
+tootsie_roll <- "Tootsie Roll Snack Bars"
+tootsie_roll_winpercent <- candy[tootsie_roll, ]$winpercent
+sum(tootsie_roll_winpercent)
+```
+
+Now we use "skimr"
+
+```{r}
+library("skimr")
+
+skim(candy)
+```
+
+> Q6. Is there any variable/column that looks to be on a different scale to the majority of the other columns in the dataset?
+
+```{r}
+skim_output <- skim(candy)
+```
+
+```{r}
+different_scale <- skim_output$skim$variable[skim_output$skim$type != "logical" & skim_output$skim$type != "integer"]
+print(different_scale)
+```
+
+> Q7. What do you think a zero and one represent for the candy$chocolate column?
+
+```{r}
+chocolate_variable_type <- skim_output$skim$type[skim_output$skim$variable == "chocolate"]
+print(chocolate_variable_type)
+```
+
+## Histogram of Winpercent Values
+
+> Q8. Plot a histogram of winpercent values
+
+```{r}
+hist(candy$winpercent, main = "Histogram of Winpercent Values", xlab = "Winpercent")
+```
+
+> Q9. Is the distribution of winpercent values symmetrical?
+
+Not symmetrical. Right skewed distribution.
+
+> Q10. Is the center of the distribution above or below 50%?
+
+```{r}
+winpercent_mean <- mean(candy$winpercent)
+sum(winpercent_mean)
+```
+
+> Q11. On average is chocolate candy higher or lower ranked than fruit candy?
+
+```{r}
+chocolate_mean <- mean(candy$winpercent[as.logical(candy$chocolate)])
+fruity_mean <- mean(candy$winpercent[as.logical(candy$fruity)])
+
+print(chocolate_mean)
+print(fruity_mean)
+
+```
+
+> Q12. Is this difference statistically significant?
+
+```{r}
+t_test_result <- t.test(candy$winpercent[as.logical(candy$chocolate)], 
+                        candy$winpercent[as.logical(candy$fruity)])
+print( t_test_result$p.value)
+```
+
+## Overall Candy Rankings
+
+> Q13. What are the five least liked candy types in this set?
+
+```{r}
+least_liked_candy <- head(candy[order(candy$winpercent), ], n = 5)
+print(least_liked_candy)
+
+library(dplyr)
+least_liked_candy_dplyr <- candy %>% arrange(winpercent) %>% head(5)
+print(least_liked_candy_dplyr)
+```
+
+> Q14. What are the top 5 all-time favorite candy types out of this set?
+
+```{r}
+top_favorite_candy <- tail(candy[order(candy$winpercent), ], n = 5)
+print(top_favorite_candy)
+
+top_favorite_candy_dplyr <- candy %>% arrange(desc(winpercent)) %>% head(5)
+print(top_favorite_candy_dplyr)
+```
+
+> Q15. Make a first barplot of candy ranking based on winpercent values.
+
+```{r}
+library(ggplot2)
+ggplot(candy) + 
+  aes(winpercent, reorder(rownames(candy), winpercent)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Winpercent", y = "Candy Type") +
+  ggtitle("Candy Ranking Based on Winpercent Values (Sorted)")
+```
+
+```{r}
+# Set up color vector
+my_cols <- rep("black", nrow(candy))
+my_cols[as.logical(candy$chocolate)] <- "chocolate"
+my_cols[as.logical(candy$bar)] <- "brown"
+my_cols[as.logical(candy$fruity)] <- "red"
+
+# Plot barplot with specified colors
+ggplot(candy) + 
+  aes(winpercent, reorder(rownames(candy), winpercent)) +
+  geom_col(fill = my_cols) +
+  labs(x = "Winpercent", y = "Candy Type") +
+  ggtitle("Candy Ranking Based on Winpercent Values (Sorted) with Candy Type Colors")
+
+```
+
+> Q17. what is the worst ranked chocolate candy?
+
+Charleston Chew
+
+> Q18. What is the best ranked fruity candy?
+
+Nik L Nip
+
+
+## Take a Look at a Pricepercent 
+
+```{r}
+library(ggrepel)
+
+ggplot(candy) +
+  aes(winpercent, pricepercent, label = rownames(candy)) +
+  geom_point(col = my_cols) + 
+  geom_text_repel(col = my_cols, size = 3.3, max.overlaps = 5)
+```
+
+> Q19. Which candy type is the highest ranked in terms of winpercent for the least money - i.e. offers the most bang for your buck?
+
+```{r}
+candy$win_to_price_ratio <- candy$winpercent / candy$pricepercent
+```
+
+```{r}
+best_value_candy <- candy[which.max(candy$win_to_price_ratio), "win_to_price_ratio"]
+cat("Q19. The candy type offering the most bang for your buck is:", rownames(best_value_candy), "\n")
+print(rownames(best_value_candy))
+```
+
+> Q20. What are the top 5 most expensive candy types in the dataset and of these which is the least popular?
+
+```{r}
+ord <- order(candy$pricepercent, decreasing = TRUE)
+top_expensive_candies <- head(candy[ord, c("pricepercent", "winpercent")], n = 5)
+cat("Q20. The top 5 most expensive candy types in the dataset are:\n")
+print(top_expensive_candies)
+
+least_popular_expensive_candy <- top_expensive_candies[which.min(top_expensive_candies$winpercent), ]
+cat("The least popular candy among the top 5 most expensive candy types is:", rownames(least_popular_expensive_candy), "\n")
+```
+
+# Make a lollipop chart of pricepercent
+
+```{r}
+library(ggplot2)
+
+ggplot(candy) +
+  aes(pricepercent, reorder(rownames(candy), pricepercent)) +
+  geom_segment(aes(yend = reorder(rownames(candy), pricepercent), 
+                   xend = 0), col = "gray40") +
+  geom_point()
+```
+
+## Exploring Correlation Structure
+
+```{r}
+library(corrplot)
+```
+
+```{r}
+cij <- cor(candy)
+corrplot(cij)
+```
+
+> Q22. Examining this plot what two variables are anti-correlated (i.e. have minus values)?
+
+```{r}
+cij <- cor(candy)
+min_corr <- min(cij)
+anti_corr_indices <- which(cij == min_corr, arr.ind = TRUE)
+anti_corr_variables <- rownames(cij)[anti_corr_indices[1, 1]]
+anti_corr_variables2 <- colnames(cij)[anti_corr_indices[1, 2]]
+cat("Q22. The two variables that are anti-correlated are:", anti_corr_variables, "and", anti_corr_variables2, "\n")
+```
+
+> Q23. Similarly, what two variables are most positively correlated?
+
+```{r}
+max_corr <- max(cij)
+pos_corr_indices <- which(cij == max_corr, arr.ind = TRUE)
+
+pos_corr_variables <- rownames(cij)[pos_corr_indices[1, 1]]
+pos_corr_variables2 <- colnames(cij)[pos_corr_indices[1, 2]]
+cat("Q23. The two variables that are most positively correlated are:", pos_corr_variables, "and", pos_corr_variables2, "\n")
+```
+
+## Principal Component Analysis 
+
+```{r}
+pca <- prcomp(candy, scale = TRUE)
+
+summary(pca)
+```
+
+```{r}
+plot(pca$x[, 1], pca$x[, 2], 
+     xlab = "PC1", ylab = "PC2", 
+     main = "PCA Score Plot of PC1 vs PC2")
+```
+
+
+```{r}
+plot(pca$x[, 1:2], col = my_cols, pch = 16, 
+     xlab = "PC1", ylab = "PC2", 
+     main = "PCA Score Plot of PC1 vs PC2")
+```
+
+```{r}
+my_data <- cbind(candy, pca$x[, 1:3])
+library(ggplot2)
+
+p <- ggplot(my_data) + 
+  aes(x = PC1, y = PC2, 
+      size = winpercent / 100,  
+      text = rownames(my_data),
+      label = rownames(my_data)) +
+  geom_point(col = my_cols)
+
+print(p)
+```
+
+```{r}
+library(ggrepel)
+
+p + geom_text_repel(size=3.3, col=my_cols, max.overlaps = 7)  + 
+  theme(legend.position = "none") +
+  labs(title="Halloween Candy PCA Space",
+       subtitle="Colored by type: chocolate bar (dark brown), chocolate other (light brown), fruity (red), other (black)",
+       caption="Data from 538")
+```
+
+```{r}
+library(plotly)
+ggplotly(p)
+```
+
+```{r}
+par(mar = c(8, 4, 2, 2))
+
+barplot(pca$rotation[, 1], las = 2, ylab = "PC1 Contribution")
+```
+
+> Q24. What original variables are picked up strongly by PC1 in the positive direction? Do these make sense to you?
+
+```{r}
+loadings_pc1 <- pca$rotation[, 1]
+
+strong_positive_loadings_pc1 <- names(loadings_pc1[loadings_pc1 > 0])
+
+cat("Q24. Original variables picked up strongly by PC1 in the positive direction are:", paste(strong_positive_loadings_pc1, collapse = ", "), "\n")
+```
+
+
+
+

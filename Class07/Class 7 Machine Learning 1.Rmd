@@ -1,0 +1,185 @@
+---
+title: 'Class07: Machine Learning 1'
+author: "Karis Kim (A16378938)"
+date: "2024-04-23"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# First Up kmeans()
+
+Demo of using kmeans() function in base R. First we will make up data with a known structure. 
+
+```{r}
+tmp <- c( rnorm(30, -3), rnorm(30, 3) )
+x <- cbind(x=tmp, y=rev(tmp))
+plot(x)
+```
+
+Now we have some made up data in `x` let's see how kmeans works with this data.
+
+```{r}
+k <- kmeans(x, centers=2, nstart=20)
+k
+```
+
+```{r}
+k$size
+```
+
+> Q. How do we go to the cluster membership/assignment?
+
+```{r}
+k$cluster
+```
+
+> Q. What about the cluster centers?
+
+```{r}
+k$centers
+```
+
+Now we go to the main results and use them to plot our data with the kmeans result.
+
+```{r}
+plot(x, col=k$cluster)
+points(k$centers, col="blue", pch=15)
+```
+
+## Now for Hierarchical Clustering
+
+We will cluster the same data `x` with the `hclust()`. In this case `hclust()` requires a distance matrix as input. 
+
+```{r}
+hc <- hclust( dist(x) )
+hc
+```
+Let's plot our hclust result
+```{r}
+plot(hc)
+```
+
+To get our cluster membership vector, we need to "cut" the tree with the `cutree()`
+
+```{r}
+grps <- cutree(hc, h=8)
+grps
+```
+
+Now plot our data with the hclust() results.
+
+```{r}
+plot(x, col=grps)
+```
+
+# Principal Component Analysis (PCA)
+
+## PCA of UK Food Data
+
+Read data from the website and try a few visualizations. 
+
+```{r}
+url <- "https://tinyurl.com/UK-foods"
+x <- read.csv(url)
+```
+
+```{r}
+nrow(x)
+ncol(x)
+```
+
+Checking your data. It is always a good idea to examine your imported data to make sure it meets your expectations. 
+
+```{r}
+#To view the entire data frame
+View(x)
+#To view the first 6 rows of the data frame 
+head(x)
+#To view the last 6 rows of the data frame 
+tail(x)
+```
+
+It appears that the data is not set properly, as the first column is labeled as 'X', giving us 5 variables not 4. To fix this we use the function rownames(). 
+
+```{r}
+#To class for the first column 
+rownames(x) <- x[,1]
+#To remove the first column 
+x <- x[,-1]
+head(x)
+```
+
+Another way to do it is by calling read.csv()
+
+x <- read.csv(url, row.names=1)
+head(x)
+
+```{r}
+#To find out the dimensions (x, y) of the data frame: dim() 
+dim(x)
+```
+
+Q2. Which approach to solving the ‘row-names problem’ mentioned above do you prefer and why? Is one approach more robust than another under certain circumstances?
+
+I think the solution for the 'row-names problem' that I prefer is the: 'x <- read.csv(url, row.names=1)' approach, as you have more control as to which column that you are changing. I think using the x[,-1] method would work if you only had to adjust the first column, because you might continue to erase more variables. 
+
+Spotting major differences and trends 
+
+```{r}
+barplot(as.matrix(x), beside=T, col=rainbow(nrow(x)))
+```
+
+```{r}
+cols <- rainbow(nrow(x))
+barplot( as.matrix(x), col=cols)
+#It is hard to compare the data in this format. 
+```
+
+```{r}
+pairs(x, col=cols)
+```
+
+PCA to the rescue!
+The main R PCA function is called `prcomp()`. We will need to give it the transpose of our input data. 
+
+```{r}
+
+pca <- prcomp(t(x))
+pca
+```
+```{r}
+#Like kmeans(), there are different attributes for prcomp()
+attributes(pca)
+#Example: calling the center values. 
+pca$center
+```
+
+To make our new PCA plot (PCA score plot) we access `pca$x`
+
+```{r}
+pca$x
+country_cols <- c("orange", "red", "blue", "green")
+plot(pca$x[,1], pca$x[,2], xlab = "PC1", ylab = "PC2")
+text(pca$x[,1], pca$x[,2], colnames(x), col = country_cols)
+```
+
+# PCA of RNA-seq Data 
+
+First, we have to read our data. 
+
+```{r}
+url2 <- "https://tinyurl.com/expression-CSV"
+rna.data <- read.csv(url2, row.names=1)
+head(rna.data)
+```
+```{r}
+pca <- prcomp(t(rna.data))
+summary(pca)
+plot(pca)
+```
+```{r}
+plot(pca$x[,1], pca$x[,2], xlab = "PC1", ylab = "PC2")
+text(pca$x[,1], pca$x[,2], colnames(rna.data))
+```
+
